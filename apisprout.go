@@ -139,7 +139,7 @@ func main() {
 
 	addParameter(flags, "port", "p", 8000, "HTTP port")
 	addParameter(flags, "validate-server", "s", false, "Check scheme/hostname/basepath against configured servers")
-	addParameter(flags, "validate-request", "", false, "Check request data structure")
+	addParameter(flags, "validate-request", "r", false, "Check request data structure")
 	addParameter(flags, "watch", "w", false, "Reload when input file changes")
 	addParameter(flags, "disable-cors", "", false, "Disable CORS headers")
 	addParameter(flags, "header", "H", "", "Add a custom header when fetching API")
