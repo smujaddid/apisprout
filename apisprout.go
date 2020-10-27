@@ -140,6 +140,7 @@ func main() {
 	addParameter(flags, "port", "p", 8000, "HTTP port")
 	addParameter(flags, "validate-server", "s", false, "Check scheme/hostname/basepath against configured servers")
 	addParameter(flags, "validate-request", "r", false, "Check request data structure")
+	addParameter(flags, "use-example-400", "", false, "Use example for response 400")
 	addParameter(flags, "watch", "w", false, "Reload when input file changes")
 	addParameter(flags, "disable-cors", "", false, "Disable CORS headers")
 	addParameter(flags, "header", "H", "", "Add a custom header when fetching API")
@@ -483,6 +484,8 @@ var handler = func(rr *RefreshableRouter) http.Handler {
 			return
 		}
 
+		useExampleForBadRequest := false
+
 		if viper.GetBool("validate-request") {
 			err = openapi3filter.ValidateRequest(nil, &openapi3filter.RequestValidationInput{
 				Request:    req,
@@ -516,9 +519,13 @@ var handler = func(rr *RefreshableRouter) http.Handler {
 			})
 			if err != nil {
 				log.Printf("ERROR: %s => %v", info, err)
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf("%v", err)))
-				return
+				if viper.GetBool("use-example-400") {
+					useExampleForBadRequest = true
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte(fmt.Sprintf("%v", err)))
+					return
+				}
 			}
 		}
 
@@ -531,6 +538,10 @@ var handler = func(rr *RefreshableRouter) http.Handler {
 		}
 
 		prefer := parsePreferHeader(req.Header.Get("Prefer"))
+
+		if useExampleForBadRequest == true && prefer["status"] == "" {
+			prefer["status"] = "400"
+		}
 
 		status, mediatype, headers, example, err := getExample(negotiator, prefer, route.Operation)
 		if err != nil {
